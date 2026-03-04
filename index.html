@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grade Calculator</title>
+
+  <!-- =====================================================================
+       FONT IMPORTS
+       Using "DM Serif Display" for the heading (elegant, academic feel)
+       and "DM Sans" for body text (clean, readable).
+  ====================================================================== -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* =======================================================================
+       CSS CUSTOM PROPERTIES (VARIABLES)
+       Edit these to restyle the entire calculator quickly.
+    ======================================================================= */
+    :root {
+      --page-bg:        #f0f2f5;           /* Light grey page background      */
+      --card-bg:        #ffffff;           /* White card background            */
+      --card-radius:    18px;              /* Corner rounding of the card      */
+      --card-shadow:    0 8px 40px rgba(0,0,0,0.10); /* Card drop shadow      */
+
+      --accent:         #3a7d44;           /* Green accent (buttons, borders)  */
+      --accent-light:   #e8f5eb;           /* Light green for editable inputs  */
+      --accent-mid:     #c5e8cb;           /* Slightly deeper green for focus  */
+
+      --text-heading:   #1a1a2e;           /* Dark heading colour              */
+      --text-body:      #3d3d3d;           /* General body text                */
+      --text-muted:     #888;              /* Muted / label text               */
+
+      --input-readonly: #f5f5f5;           /* Background for read-only fields  */
+      --border:         #e0e0e0;           /* Default input border             */
+      --border-focus:   #3a7d44;           /* Border colour when focused       */
+
+      --row-stripe:     #fafafa;           /* Alternating row stripe           */
+
+      --grade-a:        #2e7d32;           /* Colour for A grades              */
+      --grade-b:        #1565c0;           /* Colour for B grades              */
+      --grade-c:        #e65100;           /* Colour for C grades              */
+      --grade-d:        #6a1a1a;           /* Colour for D grades              */
+      --grade-f:        #b71c1c;           /* Colour for F grades              */
+    }
+
+    /* =======================================================================
+       RESET & BASE
+    ======================================================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--page-bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 16px 24px;
+      color: var(--text-body);
+    }
+
+    /* =======================================================================
+       CARD CONTAINER
+    ======================================================================= */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      box-shadow: var(--card-shadow);
+      width: 100%;
+      max-width: 640px;
+      padding: 40px 44px 32px;
+      position: relative;
+      animation: fadeUp 0.45s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* =======================================================================
+       HEADER
+    ======================================================================= */
+    .card-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .card-header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--text-heading);
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .card-header p {
+      margin-top: 6px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    /* Green accent underline beneath the title */
+    .card-header::after {
+      content: '';
+      display: block;
+      width: 52px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 14px auto 0;
+    }
+
+    /* =======================================================================
+       SECTION LABELS
+    ======================================================================= */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 22px 0 8px;
+    }
+
+    /* =======================================================================
+       TABLE / ROW STRUCTURE
+       Each input row uses a CSS grid for label + inputs alignment.
+    ======================================================================= */
+    .input-table {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* Individual row */
+    .input-row {
+      display: grid;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .input-row:last-child { border-bottom: none; }
+    .input-row:nth-child(even) { background: var(--row-stripe); }
+
+    /* Exam rows: label | raw score | slash | percentage */
+    .input-row.exam-row {
+      grid-template-columns: 1fr 110px 16px 90px;
+      gap: 8px;
+    }
+
+    /* Single-value rows: label | value */
+    .input-row.single-row {
+      grid-template-columns: 1fr 110px;
+      gap: 8px;
+    }
+
+    /* Row label text */
+    .row-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-body);
+    }
+
+    .row-weight {
+      display: inline-block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-left: 5px;
+    }
+
+    /* Divider slash between raw and percentage */
+    .slash {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    /* =======================================================================
+       INPUT FIELDS
+    ======================================================================= */
+    input[type="number"] {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.92rem;
+      color: var(--text-body);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;       /* Hide spin arrows in Firefox */
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    /* Editable inputs get the signature light-green background */
+    input.editable {
+      background: var(--accent-light);
+    }
+
+    input.editable:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(58,125,68,0.15);
+      background: var(--accent-mid);
+    }
+
+    /* Read-only percentage display */
+    input.readonly {
+      background: var(--input-readonly);
+      color: var(--text-muted);
+      cursor: default;
+      border-color: transparent;
+    }
+
+    /* Input placeholder styling */
+    input::placeholder { color: #bbb; font-size: 0.85rem; }
+
+    /* =======================================================================
+       RESULT PANEL
+       Displays the final weighted percentage and letter grade.
+    ======================================================================= */
+    .result-panel {
+      margin-top: 26px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .result-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .result-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .result-score {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.6rem;
+      color: #fff;
+      line-height: 1;
+      transition: color 0.3s;
+    }
+
+    .result-score span.unit {
+      font-size: 1.1rem;
+      opacity: 0.6;
+      margin-left: 2px;
+    }
+
+    /* Letter grade badge */
+    .grade-badge {
+      font-family: 'DM Serif Display', serif;
+      font-size: 3.2rem;
+      font-weight: 400;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 4px 22px;
+      min-width: 88px;
+      text-align: center;
+      letter-spacing: 1px;
+      transition: color 0.3s, border-color 0.3s;
+    }
+
+    /* =======================================================================
+       GRADE SCALE LEGEND
+       Small reference table at the bottom of the card.
+    ======================================================================= */
+    .scale-section {
+      margin-top: 24px;
+    }
+
+    .scale-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .scale-item {
+      background: var(--row-stripe);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .scale-item .grade-letter {
+      font-weight: 600;
+      color: var(--text-heading);
+      display: block;
+    }
+
+    .scale-item .grade-min {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+
+    /* =======================================================================
+       FOOTER
+    ======================================================================= */
+    footer {
+      margin-top: 22px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    /* =======================================================================
+       RESPONSIVE ADJUSTMENTS
+    ======================================================================= */
+    @media (max-width: 500px) {
+      .card { padding: 28px 20px 24px; }
+      .card-header h1 { font-size: 1.65rem; }
+      .input-row.exam-row { grid-template-columns: 1fr 90px 14px 76px; }
+      .scale-grid { grid-template-columns: repeat(5, 1fr); }
+      .result-score { font-size: 2rem; }
+      .grade-badge { font-size: 2.4rem; padding: 4px 14px; min-width: 70px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =====================================================================
+       MAIN CARD
+  ====================================================================== -->
+  <div class="card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <h1>Grade Calculator</h1>
+      <p>Enter your scores below to see your predicted grade in real time.</p>
+    </div>
+
+    <!-- ===================================================================
+         EXAM SECTION
+         Each exam is scored out of 100. The score entered IS the percentage
+         (e.g. 95 correct answers = 95%). No conversion needed.
+         Each exam counts for 16.667% of the final grade (50% total).
+    =================================================================== -->
+    <div class="section-label">Exams <span style="font-weight:300;text-transform:none;letter-spacing:0">(score out of 100 — 16.667% each)</span></div>
+    <div class="input-table">
+
+      <!-- Midterm 1 -->
+      <div class="input-row single-row">
+        <span class="row-label">Midterm 1 <span class="row-weight">16.667%</span></span>
+        <input
+          id="exam1-raw"
+          class="editable"
+          type="number"
+          min="0" max="100"
+          placeholder="0–100"
+          oninput="syncExamPct(1)"
+          aria-label="Midterm 1 score"
+        />
+      </div>
+
+      <!-- Midterm 2 -->
+      <div class="input-row single-row">
+        <span class="row-label">Midterm 2 <span class="row-weight">16.667%</span></span>
+        <input
+          id="exam2-raw"
+          class="editable"
+          type="number"
+          min="0" max="100"
+          placeholder="0–100"
+          oninput="syncExamPct(2)"
+          aria-label="Midterm 2 score"
+        />
+      </div>
+
+      <!-- Final Exam -->
+      <div class="input-row single-row">
+        <span class="row-label">Final Exam <span class="row-weight">16.667%</span></span>
+        <input
+          id="exam3-raw"
+          class="editable"
+          type="number"
+          min="0" max="100"
+          placeholder="0–100"
+          oninput="syncExamPct(3)"
+          aria-label="Final exam score"
+        />
+      </div>
+
+      <!-- Side Quests — +1 point added to the average exam percentage per completed quest -->
+      <div class="input-row single-row">
+        <span class="row-label">
+          Side Quests
+          <span class="row-weight">+1pt to avg exam per quest</span>
+        </span>
+        <input
+          id="sidequests"
+          class="editable"
+          type="number"
+          min="0"
+          step="1"
+          placeholder="# completed"
+          oninput="capMin0(this); recalculate()"
+          aria-label="Number of satisfactorily completed side quests"
+        />
+      </div>
+
+    </div><!-- /exam table -->
+
+    <!-- ===================================================================
+         OTHER COMPONENTS
+         Each component is a single percentage value (capped 0–100).
+    =================================================================== -->
+    <div class="section-label">Other Components</div>
+    <div class="input-table">
+
+      <!-- Contribution to Class Learning — 10% weight -->
+      <div class="input-row single-row">
+        <span class="row-label">Contribution to Class Learning <span class="row-weight">10%</span></span>
+        <input
+          id="contribution"
+          class="editable"
+          type="number"
+          min="0" max="100"
+          placeholder="0–100%"
+          oninput="capAt100(this); recalculate()"
+          aria-label="Contribution to class learning percentage"
+        />
+      </div>
+
+      <!-- Assignments — 40% weight -->
+      <div class="input-row single-row">
+        <span class="row-label">Assignments <span class="row-weight">40%</span></span>
+        <input
+          id="assignments"
+          class="editable"
+          type="number"
+          min="0" max="100"
+          placeholder="0–100%"
+          oninput="capAt100(this); recalculate()"
+          aria-label="Assignments percentage"
+        />
+      </div>
+
+    </div><!-- /other components table -->
+
+    <!-- ===================================================================
+         RESULT PANEL
+         Shows the weighted final score and corresponding letter grade.
+    =================================================================== -->
+    <div class="result-panel" role="region" aria-live="polite" aria-label="Predicted grade">
+      <div class="result-left">
+        <span class="result-label">Predicted Grade</span>
+        <!-- Numeric score is displayed here; updated by JS -->
+        <div class="result-score" id="result-score">
+          —<span class="unit"></span>
+        </div>
+      </div>
+      <!-- Letter grade badge; updated by JS -->
+      <div class="grade-badge" id="grade-badge">—</div>
+    </div>
+
+    <!-- ===================================================================
+         GRADE SCALE LEGEND
+         Quick-reference table. Edit the thresholds here AND in the JS
+         GRADE_SCALE array below to keep them in sync.
+    =================================================================== -->
+    <div class="scale-section">
+      <div class="section-label">Grade Scale</div>
+      <div class="scale-grid" style="grid-template-columns: repeat(6, 1fr);">
+        <div class="scale-item"><span class="grade-letter">A+</span> <span class="grade-min">96–100</span></div>
+        <div class="scale-item"><span class="grade-letter">A</span>  <span class="grade-min">94–96</span></div>
+        <div class="scale-item"><span class="grade-letter">A−</span> <span class="grade-min">89–94</span></div>
+        <div class="scale-item"><span class="grade-letter">B+</span> <span class="grade-min">86–89</span></div>
+        <div class="scale-item"><span class="grade-letter">B</span>  <span class="grade-min">83–86</span></div>
+        <div class="scale-item"><span class="grade-letter">B−</span> <span class="grade-min">79–83</span></div>
+        <div class="scale-item"><span class="grade-letter">C+</span> <span class="grade-min">76–79</span></div>
+        <div class="scale-item"><span class="grade-letter">C</span>  <span class="grade-min">73–76</span></div>
+        <div class="scale-item"><span class="grade-letter">C−</span> <span class="grade-min">68–73</span></div>
+        <div class="scale-item"><span class="grade-letter">D</span>  <span class="grade-min">60–68</span></div>
+        <div class="scale-item"><span class="grade-letter">F</span>  <span class="grade-min">&lt;60</span></div>
+      </div>
+    </div>
+
+  </div><!-- /card -->
+
+  <!-- =====================================================================
+       FOOTER
+       Replace the blank below with your name.
+  ====================================================================== -->
+  <footer>Built by: Illysa Izenberg; inspired by Jamie Young</footer>
+
+
+  <!-- =====================================================================
+       JAVASCRIPT
+  ====================================================================== -->
+  <script>
+    /* -----------------------------------------------------------------------
+       GRADE SCALE
+       An ordered array of { min, letter } pairs.
+       - `min` is the EXCLUSIVE lower bound (score must be GREATER THAN min).
+       - Entries are checked from highest to lowest; the first match wins.
+       - The last entry ("F") has min: -Infinity and will always match.
+
+       TO CHANGE BOUNDARIES: edit the `min` values here.
+       Remember to also update the HTML legend above to keep them in sync.
+    ----------------------------------------------------------------------- */
+    const GRADE_SCALE = [
+      { min: 96, letter: 'A+' },   // 96–100%
+      { min: 94, letter: 'A'  },   // >94% to 96%
+      { min: 89, letter: 'A−' },   // >89% to 94%
+      { min: 86, letter: 'B+' },   // >86% to 89%
+      { min: 83, letter: 'B'  },   // >83% to 86%
+      { min: 79, letter: 'B−' },   // >79% to 83%
+      { min: 76, letter: 'C+' },   // >76% to 79%
+      { min: 73, letter: 'C'  },   // >73% to 76%
+      { min: 68, letter: 'C−' },   // >68% to 73%
+      { min: 60, letter: 'D'  },   // >60% to 68%
+      { min: -Infinity, letter: 'F' }, // 0–60%
+    ];
+
+    /* -----------------------------------------------------------------------
+       COMPONENT WEIGHTS
+       Must sum to 100 (excluding extra credit, which is additive).
+       - examsEach : weight of each individual exam (there are 3)
+       - final     : weight of the final exam
+       - homework  : weight of homework
+       - attendance: weight of attendance
+       - skills    : weight of skills assessment
+
+       TO CHANGE WEIGHTS: edit these values. Make sure they still sum to 100.
+    ----------------------------------------------------------------------- */
+    const WEIGHTS = {
+      examsEach    : 16.667,  // × 3 = 50% total for exams
+      contribution : 10,      // Contribution to class learning
+      assignments  : 40,      // Assignments
+      // Extra credit is NOT listed here — it is added directly to the result.
+    };
+
+    /* -----------------------------------------------------------------------
+       EXAM RAW SCORE → PERCENTAGE CONVERSION
+       Exams are now scored out of 100, so the score IS the percentage.
+       EXAM_MAX is kept for clamping purposes.
+       TO CHANGE: update EXAM_MAX if the exam scale ever changes.
+    ----------------------------------------------------------------------- */
+    const EXAM_MAX = 100;
+
+    /* -----------------------------------------------------------------------
+       syncExamPct(n)
+       Called whenever an exam score input changes.
+       Since scores are out of 100, the value is used directly as the
+       percentage. It is clamped to [0, 100] and stored on exam{n}-raw,
+       which recalculate() reads via getVal('exam{n}-raw').
+    ----------------------------------------------------------------------- */
+    function syncExamPct(n) {
+      const rawInput = document.getElementById(`exam${n}-raw`);
+
+      let raw = parseFloat(rawInput.value);
+
+      if (!isNaN(raw)) {
+        // Clamp to valid range
+        raw = Math.min(Math.max(raw, 0), EXAM_MAX);
+        rawInput.value = raw;
+      }
+
+      recalculate();
+    }
+
+    /* -----------------------------------------------------------------------
+       capAt100(input)
+       Enforces a maximum of 100 on any single-value input.
+       Applied via the oninput handler on each non-exam input.
+    ----------------------------------------------------------------------- */
+    function capAt100(input) {
+      if (parseFloat(input.value) > 100) input.value = 100;
+      if (parseFloat(input.value) < 0)   input.value = 0;
+    }
+
+    /* -----------------------------------------------------------------------
+       getVal(id)
+       Helper: returns the numeric value of a field, or null if blank/invalid.
+       Using null (rather than 0) lets us skip missing components gracefully.
+    ----------------------------------------------------------------------- */
+    function getVal(id) {
+      const v = parseFloat(document.getElementById(id).value);
+      return isNaN(v) ? null : v;
+    }
+
+    /* -----------------------------------------------------------------------
+       getLetterGrade(score)
+       Maps a numeric score to a letter grade using GRADE_SCALE.
+       Iterates from highest threshold to lowest; returns the letter of the
+       first entry whose `min` is strictly less than the score.
+    ----------------------------------------------------------------------- */
+    function getLetterGrade(score) {
+      for (const { min, letter } of GRADE_SCALE) {
+        if (score > min) return letter;
+      }
+      return 'F'; // fallback (should be caught by last GRADE_SCALE entry)
+    }
+
+    /* -----------------------------------------------------------------------
+       gradeColor(letter)
+       Returns a CSS colour string for visual differentiation of grades.
+       Used to tint the result score and badge text.
+    ----------------------------------------------------------------------- */
+    function gradeColor(letter) {
+      if (letter.startsWith('A')) return '#4caf7d';  // green
+      if (letter.startsWith('B')) return '#64b5f6';  // blue
+      if (letter.startsWith('C')) return '#ffb74d';  // amber
+      if (letter === 'D')         return '#ef9a9a';  // light red
+      return '#ef5350';                               // red (F)
+    }
+
+    /* -----------------------------------------------------------------------
+       capMin0(input)
+       Prevents negative values in count-style inputs (e.g. side quests).
+    ----------------------------------------------------------------------- */
+    function capMin0(input) {
+      if (parseFloat(input.value) < 0) input.value = 0;
+    }
+
+    /* -----------------------------------------------------------------------
+       recalculate()
+       Core calculation function. Called on every input change.
+
+       CALCULATION FORMULA:
+         1. Compute the average of the three exam percentages.
+         2. Add (sideQuestCount × 1) to that average — capped at 100.
+         3. Weight the boosted exam average by 50% (16.667% × 3).
+         4. Add weighted contribution and assignments scores.
+
+       Components with no entry are treated as 0 so the running total is
+       always meaningful as the student fills in scores.
+    ----------------------------------------------------------------------- */
+    function recalculate() {
+      /* --- Read exam scores directly (score out of 100 = percentage) ---- */
+      const e1   = getVal('exam1-raw')    ?? 0;
+      const e2   = getVal('exam2-raw')    ?? 0;
+      const e3   = getVal('exam3-raw')    ?? 0;
+
+      /* --- Side quest bonus: +1 point per completed quest, added to the
+             average exam percentage, then capped at 100. ------------------ */
+      const sqCount   = getVal('sidequests') ?? 0;
+      const examAvg   = (e1 + e2 + e3) / 3;          // average exam %
+      const boostedAvg = Math.min(examAvg + sqCount, 100); // cap at 100%
+
+      /* --- Other components ---------------------------------------------- */
+      const cont = getVal('contribution') ?? 0;
+      const asgn = getVal('assignments')  ?? 0;
+
+      /* --- Weighted sum
+             Exams contribute 50% total (16.667% × 3), calculated via the
+             boosted average rather than three separate terms so the side
+             quest bonus applies proportionally across all three exams.     */
+      const weighted =
+          (boostedAvg * (WEIGHTS.examsEach * 3) / 100)   // 50% for exams
+        + (cont       * WEIGHTS.contribution    / 100)   // 10%
+        + (asgn       * WEIGHTS.assignments     / 100);  // 40%
+
+      /* --- Round to two decimal places for display ----------------------- */
+      const finalScore = Math.round(weighted * 100) / 100;
+
+      /* --- Determine letter grade ---------------------------------------- */
+      const letter = getLetterGrade(finalScore);
+      const color  = gradeColor(letter);
+
+      /* --- Update the DOM ------------------------------------------------ */
+      const scoreEl = document.getElementById('result-score');
+      const badgeEl = document.getElementById('grade-badge');
+
+      scoreEl.innerHTML = `${finalScore.toFixed(2)}<span class="unit">%</span>`;
+      scoreEl.style.color = color;
+
+      badgeEl.textContent    = letter;
+      badgeEl.style.color    = color;
+      badgeEl.style.borderColor = color + '55'; // semi-transparent border tint
+    }
+  </script>
+
+</body>
+</html>
