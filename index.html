@@ -486,11 +486,10 @@
     =================================================================== -->
     <div class="scale-section">
       <div class="section-label">Grade Scale</div>
-      <div class="scale-grid" style="grid-template-columns: repeat(6, 1fr);">
+      <div class="scale-grid" style="grid-template-columns: repeat(5, 1fr);">
         <div class="scale-item"><span class="grade-letter">A+</span> <span class="grade-min">96–100</span></div>
-        <div class="scale-item"><span class="grade-letter">A</span>  <span class="grade-min">94–96</span></div>
-        <div class="scale-item"><span class="grade-letter">A−</span> <span class="grade-min">89–94</span></div>
-        <div class="scale-item"><span class="grade-letter">B+</span> <span class="grade-min">86–89</span></div>
+        <div class="scale-item"><span class="grade-letter">A</span>  <span class="grade-min">93.3–96</span></div>
+        <div class="scale-item"><span class="grade-letter">B+</span> <span class="grade-min">86–93.3</span></div>
         <div class="scale-item"><span class="grade-letter">B</span>  <span class="grade-min">83–86</span></div>
         <div class="scale-item"><span class="grade-letter">B−</span> <span class="grade-min">79–83</span></div>
         <div class="scale-item"><span class="grade-letter">C+</span> <span class="grade-min">76–79</span></div>
@@ -526,9 +525,8 @@
     ----------------------------------------------------------------------- */
     const GRADE_SCALE = [
       { min: 96, letter: 'A+' },   // 96–100%
-      { min: 94, letter: 'A'  },   // >94% to 96%
-      { min: 89, letter: 'A−' },   // >89% to 94%
-      { min: 86, letter: 'B+' },   // >86% to 89%
+      { min: 93.3, letter: 'A'  }, // >93.3% to 96%
+      { min: 86, letter: 'B+' },   // >86% to 93.3%
       { min: 83, letter: 'B'  },   // >83% to 86%
       { min: 79, letter: 'B−' },   // >79% to 83%
       { min: 76, letter: 'C+' },   // >76% to 79%
