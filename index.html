@@ -284,41 +284,6 @@
     }
 
     /* =======================================================================
-       GRADE SCALE LEGEND
-       Small reference table at the bottom of the card.
-    ======================================================================= */
-    .scale-section {
-      margin-top: 24px;
-    }
-
-    .scale-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-    }
-
-    .scale-item {
-      background: var(--row-stripe);
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      padding: 6px 4px;
-      text-align: center;
-      font-size: 0.78rem;
-      line-height: 1.4;
-    }
-
-    .scale-item .grade-letter {
-      font-weight: 600;
-      color: var(--text-heading);
-      display: block;
-    }
-
-    .scale-item .grade-min {
-      color: var(--text-muted);
-      font-size: 0.7rem;
-    }
-
-    /* =======================================================================
        FOOTER
     ======================================================================= */
     footer {
@@ -336,7 +301,6 @@
       .card { padding: 28px 20px 24px; }
       .card-header h1 { font-size: 1.65rem; }
       .input-row.exam-row { grid-template-columns: 1fr 90px 14px 76px; }
-      .scale-grid { grid-template-columns: repeat(3, 1fr); }
       .result-score { font-size: 2rem; }
       .grade-badge { font-size: 2.4rem; padding: 4px 14px; min-width: 70px; }
     }
@@ -480,28 +444,6 @@
       <div class="grade-badge" id="grade-badge">—</div>
     </div>
 
-    <!-- ===================================================================
-         GRADE SCALE LEGEND
-         Quick-reference table. Edit the thresholds here AND in the JS
-         GRADE_SCALE array below to keep them in sync.
-    =================================================================== -->
-    <div class="scale-section">
-      <div class="section-label">Grade Scale</div>
-      <div class="scale-grid">
-        <div class="scale-item"><span class="grade-letter">A+</span> <span class="grade-min">96–100</span></div>
-        <div class="scale-item"><span class="grade-letter">A</span>  <span class="grade-min">93.3–96</span></div>
-        <div class="scale-item"><span class="grade-letter">A−</span> <span class="grade-min">89–93.3</span></div>
-        <div class="scale-item"><span class="grade-letter">B+</span> <span class="grade-min">86–89</span></div>
-        <div class="scale-item"><span class="grade-letter">B</span>  <span class="grade-min">83–86</span></div>
-        <div class="scale-item"><span class="grade-letter">B−</span> <span class="grade-min">79–83</span></div>
-        <div class="scale-item"><span class="grade-letter">C+</span> <span class="grade-min">76–79</span></div>
-        <div class="scale-item"><span class="grade-letter">C</span>  <span class="grade-min">73–76</span></div>
-        <div class="scale-item"><span class="grade-letter">C−</span> <span class="grade-min">68–73</span></div>
-        <div class="scale-item"><span class="grade-letter">D</span>  <span class="grade-min">60–68</span></div>
-        <div class="scale-item"><span class="grade-letter">F</span>  <span class="grade-min">&lt;60</span></div>
-      </div>
-    </div>
-
   </div><!-- /card -->
 
   <!-- =====================================================================
@@ -522,21 +464,31 @@
        - Entries are checked from highest to lowest; the first match wins.
        - The last entry ("F") has min: -Infinity and will always match.
 
-       TO CHANGE BOUNDARIES: edit the `min` values here.
-       Remember to also update the HTML legend above to keep them in sync.
+       Updated to match new grade scale:
+       A+ = 98.5–100
+       A = 93.5–98.4
+       A−= 89.5–93.4
+       B+ = 87–89.4
+       B = 83–87
+       B−= 79–83
+       C+= 76–79
+       C= 73–76
+       C−= 68–73
+       D= 60–68
+       Fail= <60
     ----------------------------------------------------------------------- */
     const GRADE_SCALE = [
-      { min: 96, letter: 'A+' },   // 96–100%
-      { min: 93.3, letter: 'A'  }, // >93.3% to 96%
-      { min: 89, letter: 'A−' },   // >89% to 93.3%
-      { min: 86, letter: 'B+' },   // >86% to 89%
-      { min: 83, letter: 'B'  },   // >83% to 86%
-      { min: 79, letter: 'B−' },   // >79% to 83%
-      { min: 76, letter: 'C+' },   // >76% to 79%
-      { min: 73, letter: 'C'  },   // >73% to 76%
-      { min: 68, letter: 'C−' },   // >68% to 73%
-      { min: 60, letter: 'D'  },   // >60% to 68%
-      { min: -Infinity, letter: 'F' }, // 0–60%
+      { min: 98.5, letter: 'A+' },   // 98.5–100%
+      { min: 93.5, letter: 'A'  },   // 93.5–98.4%
+      { min: 89.5, letter: 'A−' },   // 89.5–93.4%
+      { min: 87, letter: 'B+' },     // 87–89.4%
+      { min: 83, letter: 'B'  },     // 83–87% (note: B is 83–87, not >83)
+      { min: 79, letter: 'B−' },     // 79–83%
+      { min: 76, letter: 'C+' },     // 76–79%
+      { min: 73, letter: 'C'  },     // 73–76%
+      { min: 68, letter: 'C−' },     // 68–73%
+      { min: 60, letter: 'D'  },     // 60–68%
+      { min: -Infinity, letter: 'F' }, // <60%
     ];
 
     /* -----------------------------------------------------------------------
@@ -610,11 +562,11 @@
        getLetterGrade(score)
        Maps a numeric score to a letter grade using GRADE_SCALE.
        Iterates from highest threshold to lowest; returns the letter of the
-       first entry whose `min` is strictly less than the score.
+       first entry whose `min` is less than or equal to the score.
     ----------------------------------------------------------------------- */
     function getLetterGrade(score) {
       for (const { min, letter } of GRADE_SCALE) {
-        if (score > min) return letter;
+        if (score >= min) return letter;
       }
       return 'F'; // fallback (should be caught by last GRADE_SCALE entry)
     }
